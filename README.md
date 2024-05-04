@@ -31,13 +31,13 @@
 
 Опции make для работы с контейнерами:
 
-start_api_gateway:    			 	docker compose up
+`start_api_gateway`:    			 	docker compose up
 
-rebuild_and_start_api_gateway:  	docker compose up --build
+`rebuild_and_start_api_gateway`:  	docker compose up --build
 
-prune: 							docker image prune #для удаления зависших образов после пересборки
+`prune`: 							docker image prune #для удаления зависших образов после пересборки
 
-down:							docker compose down
+`down`:							docker compose down
 
 Настройки для БД приведены в файле .env
 
