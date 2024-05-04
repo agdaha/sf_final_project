@@ -1,0 +1,64 @@
+package models
+
+import (
+	"database/sql"
+	"encoding/json"
+)
+
+type NewComment struct {
+	Author      string    `json:"author" validate:"required"`
+	CommentText string    `json:"comment_text" validate:"required"`
+	NewsId      int       `json:"news_id" validate:"required"`
+	ParentId    NullInt64 `json:"parent_id,omitempty"`
+}
+
+type Comment struct {
+	Id          int       `json:"id,omitempty"`
+	Author      string    `json:"author"`
+	CommentText string    `json:"comment_text"`
+	NewsId      int       `json:"news_id"`
+	ParentId    NullInt64 `json:"parent_id,omitempty"`
+	Level       int       `json:"level,omitempty"`
+}
+
+type NullInt64 struct {
+	sql.NullInt64
+}
+
+// Scan implements the Scanner interface for NullInt64
+// func (ni *NullInt64) Scan(value interface{}) error {
+// 	var i sql.NullInt64
+// 	if err := i.Scan(value); err != nil {
+// 		return err
+// 	}
+// 	// if nil the make Valid false
+// 	if reflect.TypeOf(value) == nil {
+// 		*ni = NullInt64{i.Int64, false}
+// 	} else {
+// 		*ni = NullInt64{i.Int64, true}
+// 	}
+// 	return nil
+// }
+
+// MarshalJSON for NullInt64
+func (ni *NullInt64) MarshalJSON() ([]byte, error) {
+	if !ni.Valid {
+		return []byte("null"), nil
+	}
+	return json.Marshal(ni.Int64)
+}
+
+func (v *NullInt64) UnmarshalJSON(data []byte) error {
+	// Unmarshalling into a pointer will let us detect null
+	var x *int64
+	if err := json.Unmarshal(data, &x); err != nil {
+		return err
+	}
+	if x != nil {
+		v.Valid = true
+		v.Int64 = *x
+	} else {
+		v.Valid = false
+	}
+	return nil
+}

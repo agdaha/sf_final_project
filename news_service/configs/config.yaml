@@ -1,0 +1,12 @@
+env: "devel"
+http_server:
+  address: "0.0.0.0:8081"
+  timeout: 4s
+  idle_timeout: 30s
+db_url: "host=postgres dbname=postgres user=postgres password=postgres port=5432 sslmode=disable"
+rss: [
+      "https://habr.com/ru/rss/hub/go/all/?fl=ru",
+      "https://habr.com/ru/rss/best/daily/?fl=ru",
+      "https://cprss.s3.amazonaws.com/golangweekly.com.xml"
+   ]
+request_period: 5

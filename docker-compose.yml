@@ -1,0 +1,94 @@
+version: "3.9"
+
+name: agdaha_dw
+
+services:
+  postgres:
+    image: postgres:15.3-alpine
+    container_name: postgres_db
+    restart: always
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    expose:
+      - ${DB_PORT}   
+    ports:
+      - ${DB_PORT}:${DB_PORT}
+    command: 
+      - "postgres"
+      - "-c"
+      - "port=${DB_PORT}"
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - postgres:/var/lib/postgresql/data
+
+  api_gataway:
+    build: ./api_gateway
+    restart: always
+    image: agdaha/api_gateway:latest
+    container_name: api_gateway
+    environment:
+      - LOG_LEVEL=INFO
+    ports:
+      - 8080:8080
+
+  censor_service:
+    build: ./censor_service
+    restart: always
+    image: agdaha/censor_service:latest
+    container_name: censor_service
+    environment:
+      - LOG_LEVEL=INFO
+    ports:
+      - 8083:8083
+
+  comments_service:
+    build: ./comments_service
+    restart: always
+    image: agdaha/comments_service:latest
+    container_name: comments_service
+    env_file:
+      - .env
+    environment:
+      - LOG_LEVEL=INFO
+    ports:
+      - 8082:8082
+    depends_on:
+      - postgres
+
+  news_service:
+    build: ./news_service
+    restart: always
+    image: agdaha/news_service:latest
+    container_name: news_service   
+    env_file:
+      - .env
+    environment:
+      - LOG_LEVEL=INFO  
+    ports:
+      - 8081:8081
+    depends_on:
+      - postgres
+
+  # pgadmin:
+  #   image: dpage/pgadmin4:latest
+  #   environment:
+  #     PGADMIN_DEFAULT_EMAIL: r.tarisov@gmail.com
+  #     PGADMIN_DEFAULT_PASSWORD: xxxxxx
+  #     PGADMIN_LISTEN_PORT: 80
+  #   ports:
+  #     - 15432:80
+  #   volumes:
+  #     - pgadmin:/var/lib/pgadmin
+  #   depends_on:
+  #     - postgres
+
+volumes:
+  postgres:
+  pgadmin:
+
+# networks:
+#   bridge:
+#     driver: bridge
