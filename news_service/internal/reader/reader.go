@@ -61,6 +61,7 @@ func (r *reader) getPosts(url string, posts chan<- []models.Post, errs chan<- er
 			continue
 		}
 		r.log.Info(fmt.Sprintf(" чтение новостей с %v, получено %v", url, len(news)))
+		r.log.Debug("получены", slog.Any("news", news))
 		posts <- news
 		time.Sleep(time.Minute * time.Duration(r.config.RequestPeriod))
 	}

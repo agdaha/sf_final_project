@@ -19,13 +19,19 @@
 Формат ответа:
 
 ```
-    "Posts": [
+{
+    "News": [
             {
                 "Id":  {int}
                 "Title": {string}
                 "PubDate": {int}
             }, ...
     ]
+    "Pages": {
+        "Total": {int},
+        "Current": {int}
+    }
+}
 ```
 
 ##### GET /api/news/ - получение новости c id = ,

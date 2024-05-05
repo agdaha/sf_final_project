@@ -37,7 +37,7 @@ func New(constr string, log *slog.Logger) (*store, error) {
 		return nil, err
 	}
 
-	return &store{pool: pool, log: log}, nil
+	return &store{pool: pool, log: log.With(slog.String("op", "store.postgres"))}, nil
 }
 
 // Получение комментариев к новости

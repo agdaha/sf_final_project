@@ -1,6 +1,6 @@
 package models
 
 type Response struct {
-	Posts []ShortPost
+	News  []ShortPost
 	Pages Pages
 }

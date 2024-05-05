@@ -34,18 +34,21 @@ func New(constr string, log *slog.Logger) (*Store, error) {
 		return nil, err
 	}
 
-	//Ожидание доступности БД на старте. 5 попыток с интервалом в 3 сек.
+	//Ожидание доступности БД на старте. 5 попыток с интервалом в 10 сек.
+	log.Debug("проверка доступности БД")
 	r := helper.Retry(pool.Ping, 5, 10*time.Second)
 	err = r(context.Background())
 	if err != nil {
 		return nil, err
 	}
 
-	return &Store{pool: pool, log: log}, nil
+	return &Store{pool: pool, log: log.With(slog.String("op", "store.postgres"))}, nil
 }
 
 // Запись/Обновление новостей в хранилище
 func (s *Store) UpdatePosts(posts []models.Post) error {
+
+	s.log.Debug("upsert полученных постов/новостей")
 	for _, post := range posts {
 		_, err := s.pool.Exec(context.Background(), `
 		INSERT INTO news (title, description, link, pub_date, author, guid)
@@ -70,7 +73,8 @@ func (s *Store) UpdatePosts(posts []models.Post) error {
 // search - строка поиска в названии новости
 // page - номер страницы
 func (s *Store) Posts(search string, page int) (models.Response, error) {
-	s.log.Debug("параметры запроса", slog.Any("search", search), slog.Any("page", page))
+
+	s.log.Debug("Получение количество новостей", slog.Any("search", search), slog.Any("page", page))
 	row := s.pool.QueryRow(context.Background(), `
 		SELECT count(id) as cnt
 		FROM news
@@ -90,7 +94,13 @@ func (s *Store) Posts(search string, page int) (models.Response, error) {
 	if page > pagesCount && pagesCount != 0 {
 		page = pagesCount
 	}
+	s.log.Debug("параметры пагинации",
+		slog.Int("Current page", page),
+		slog.Int("Total pages", pagesCount),
+		slog.Int("Posts per Page", postsPerPage),
+	)
 
+	s.log.Debug("Получение новостей по фильтру")
 	rows, err := s.pool.Query(context.Background(), `
 	SELECT id, title, description, pub_date 
 	FROM news
@@ -106,6 +116,7 @@ func (s *Store) Posts(search string, page int) (models.Response, error) {
 		return models.Response{}, err
 	}
 
+	s.log.Debug("обработка результатов")
 	var posts []models.ShortPost
 	for rows.Next() {
 		var p models.ShortPost
@@ -126,7 +137,7 @@ func (s *Store) Posts(search string, page int) (models.Response, error) {
 	}
 
 	res := models.Response{
-		Posts: posts,
+		News: posts,
 		Pages: models.Pages{
 			Total:   pagesCount,
 			Current: page,

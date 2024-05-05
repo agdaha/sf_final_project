@@ -52,6 +52,7 @@ func main() {
 	postHandler := getonepost.New(store, log)
 	router.HandlerFunc(http.MethodGet, getPostURL, postHandler)
 	router.HandlerFunc(http.MethodGet, getPostsURL, postsHandler)
+
 	start(router, store, log, config)
 }
 
@@ -70,8 +71,11 @@ func start(router *httprouter.Router, store storage.Store, log *slog.Logger, cfg
 	}
 
 	middlewareLogger := middleware.Logger(log)
+	routWithLogger := middlewareLogger(router)
+	routWithRequestId := middleware.RequestID(routWithLogger)
+
 	server = &http.Server{
-		Handler:      middleware.RequestID(middlewareLogger(router)),
+		Handler:      routWithRequestId,
 		WriteTimeout: cfg.Timeout,
 		ReadTimeout:  cfg.Timeout,
 		IdleTimeout:  cfg.HTTPServer.IdleTimeout,
