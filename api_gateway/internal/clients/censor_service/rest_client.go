@@ -31,21 +31,19 @@ func New(URL string, logger *slog.Logger) CensorService {
 }
 
 func (c *client) CheckComment(ctx context.Context, text string) (int, error) {
-	var code int
 
 	c.Logger.Debug("marshal map to bytes")
 	dataBytes, err := json.Marshal(map[string]string{"comment_text": text})
 	if err != nil {
-		return code, fmt.Errorf("failed to marshal text")
+		return http.StatusBadRequest, fmt.Errorf("failed to marshal text")
 	}
 
 	c.Logger.Debug("create new request")
 	req, err := http.NewRequest("POST", c.URL, bytes.NewBuffer(dataBytes))
 	if err != nil {
-		return code, fmt.Errorf("failed to create new request due to error: %v", err)
+		return http.StatusInternalServerError, fmt.Errorf("failed to create new request due to error: %v", err)
 	}
 
-	c.Logger.Debug("send request")
 	reqCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 	req = req.WithContext(reqCtx)
@@ -53,10 +51,11 @@ func (c *client) CheckComment(ctx context.Context, text string) (int, error) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	req.Header.Set("X-Request-Id", middleware.GetReqID(ctx))
 
+	c.Logger.Debug("send request")
 	response, err := c.HTTPClient.Do(req)
 	if err != nil {
-		return code, fmt.Errorf("failed to send request. error: %w", err)
+		return http.StatusServiceUnavailable, fmt.Errorf("failed to send request. error: %w", err)
 	}
-	defer response.Body.Close()
+
 	return response.StatusCode, nil
 }

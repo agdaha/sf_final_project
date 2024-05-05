@@ -24,9 +24,9 @@ import (
 )
 
 const (
-	newsListURL = "/api/news"
-	newsURL     = "/api/news/:newsid"
-	commentURL  = "/api/comments"
+	newsListURL     = "/api/news"
+	newsDetailedURL = "/api/news/:newsid"
+	commentURL      = "/api/comments"
 )
 
 func main() {
@@ -36,6 +36,7 @@ func main() {
 
 	log.Debug(fmt.Sprintf("Настройки %v", config))
 
+	//Создание роутера, сервисов-клиентов и обработчиков входящих запросов
 	router := httprouter.New()
 	censorService := censorservice.New(config.CensorServiceURL, log)
 	commentService := commentservice.New(config.CommentsServiceURL, log)
@@ -43,14 +44,14 @@ func main() {
 	newsListHandleFunc := getnewslist.New(newsService, log)
 	newsDetailedHandleFunc := getnewsdetailed.New(newsService, commentService, log)
 	commentPostHandleFunc := postcomment.New(commentService, censorService, log)
-
 	router.HandlerFunc(http.MethodGet, newsListURL, newsListHandleFunc)
-	router.HandlerFunc(http.MethodGet, newsURL, newsDetailedHandleFunc)
+	router.HandlerFunc(http.MethodGet, newsDetailedURL, newsDetailedHandleFunc)
 	router.HandlerFunc(http.MethodPost, commentURL, commentPostHandleFunc)
 
 	start(router, log, config)
 }
 
+// Запуск сервера
 func start(router *httprouter.Router, log *slog.Logger, cfg *config.Config) {
 	var server *http.Server
 	var listener net.Listener
@@ -66,13 +67,17 @@ func start(router *httprouter.Router, log *slog.Logger, cfg *config.Config) {
 	}
 
 	middlewareLogger := middleware.Logger(log)
+	routWithLogger := middlewareLogger(router)
+	routWithRequestId := middleware.RequestID(routWithLogger)
+
 	server = &http.Server{
-		Handler:      middleware.RequestID(middlewareLogger(router)),
+		Handler:      routWithRequestId,
 		WriteTimeout: cfg.Timeout,
 		ReadTimeout:  cfg.Timeout,
 		IdleTimeout:  cfg.HTTPServer.IdleTimeout,
 	}
 
+	// запуск горутины, отслеживающей сигналы от ОС на останов
 	go shutdown.Graceful([]os.Signal{syscall.SIGABRT, syscall.SIGQUIT, syscall.SIGHUP, os.Interrupt, syscall.SIGTERM}, log,
 		server)
 

@@ -25,7 +25,7 @@ func New(newsService newsservice.NewsService, commentService commentservice.Comm
 		)
 		w.Header().Set("Content-Type", "application/json")
 
-		id, err := exctractId(r)
+		id, err := exctractNewsId(r)
 		if err != nil {
 			log.Error(" failed parse newsid", slog.Any("error", err))
 			w.WriteHeader(http.StatusBadRequest)
@@ -125,7 +125,7 @@ func New(newsService newsservice.NewsService, commentService commentservice.Comm
 	}
 }
 
-func exctractId(r *http.Request) (int, error) {
+func exctractNewsId(r *http.Request) (int, error) {
 	params := r.Context().Value(httprouter.ParamsKey).(httprouter.Params)
 	newsIds := params.ByName("newsid")
 	id, err := strconv.Atoi(newsIds)

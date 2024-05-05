@@ -19,6 +19,8 @@ func New(commentService commentservice.CommentService, censorService censorservi
 			slog.String("op", op),
 			slog.String("request_id", middleware.GetReqID(r.Context())),
 		)
+		w.Header().Set("Content-Type", "application/json")
+
 		log.Debug("decode create comment")
 		var comment models.NewComment
 		defer r.Body.Close()
@@ -29,11 +31,23 @@ func New(commentService commentservice.CommentService, censorService censorservi
 			w.Write([]byte(" ошибка декодирования комментария"))
 			return
 		}
+
 		log.Debug(" Проверка коммента", slog.Any("comment", comment))
 		code, err := censorService.CheckComment(r.Context(), comment.CommentText)
-		if code != http.StatusOK || err != nil {
+		if err != nil {
+			w.WriteHeader(code)
+			switch code {
+			case http.StatusBadRequest:
+				w.Write([]byte("проверьте направляемые данные"))
+			case http.StatusInternalServerError:
 
-			w.WriteHeader(http.StatusBadRequest)
+			case http.StatusServiceUnavailable:
+				w.Write([]byte("недоступен сервис цензурирования"))
+			}
+			return
+		}
+		if code != http.StatusOK {
+			w.WriteHeader(code)
 			w.Write([]byte("пост не прошел цензор"))
 			return
 		}
@@ -45,7 +59,7 @@ func New(commentService commentservice.CommentService, censorService censorservi
 			return
 		}
 
-		log.Info(" Comment saved")
+		log.Debug(" комментарий сохранен")
 		w.WriteHeader(http.StatusCreated)
 		w.Write([]byte(strconv.Itoa(int(id))))
 	}
