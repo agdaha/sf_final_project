@@ -30,6 +30,7 @@ func main() {
 
 	log.Debug(fmt.Sprintf("Настройки %v", config))
 
+	log.Info("Инициализация хранилища")
 	db, err := memdb.New()
 	if err != nil {
 		log.Error(err.Error())
@@ -57,8 +58,11 @@ func start(router *httprouter.Router, log *slog.Logger, cfg *config.Config) {
 	}
 
 	middlewareLogger := middleware.Logger(log)
+	routWithLogger := middlewareLogger(router)
+	routWithRequestId := middleware.RequestID(routWithLogger)
+
 	server = &http.Server{
-		Handler:      middleware.RequestID(middlewareLogger(router)),
+		Handler:      routWithRequestId,
 		WriteTimeout: cfg.Timeout,
 		ReadTimeout:  cfg.Timeout,
 		IdleTimeout:  cfg.HTTPServer.IdleTimeout,

@@ -8,13 +8,10 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/agdaha/sf_final_project/censor_service/internal/models"
 	"github.com/agdaha/sf_final_project/censor_service/internal/storage"
 	"github.com/agdaha/sf_final_project/censor_service/pkg/middleware"
 )
-
-type Request struct {
-	CommentText string `json:"comment_text"`
-}
 
 func New(store storage.Store, log *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -24,8 +21,9 @@ func New(store storage.Store, log *slog.Logger) http.HandlerFunc {
 			slog.String("request_id", middleware.GetReqID(r.Context())),
 		)
 
-		var req Request
+		var req models.Request
 
+		log.Debug("decode comment")
 		err := json.NewDecoder(r.Body).Decode(&req)
 		if errors.Is(err, io.EOF) || req.CommentText == "" {
 			log.Error("request body is empty")
@@ -43,10 +41,9 @@ func New(store storage.Store, log *slog.Logger) http.HandlerFunc {
 			return
 		}
 
-		log.Info("request body decoded", slog.Any("request", req))
+		log.Debug("request body decoded", slog.Any("request", req))
 
 		valid := true
-
 		for _, w := range store.Words() {
 			if strings.Contains(strings.ToLower(req.CommentText), w) {
 				valid = false
