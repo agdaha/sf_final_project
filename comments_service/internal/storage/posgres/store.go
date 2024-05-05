@@ -30,7 +30,7 @@ func New(constr string, log *slog.Logger) (*store, error) {
 		return nil, err
 	}
 
-	//Ожидание доступности БД на старте. 5 попыток с интервалом в 3 сек.
+	log.Debug("проверка доступности БД")
 	r := helper.Retry(pool.Ping, 5, 10*time.Second)
 	err = r(context.Background())
 	if err != nil {
@@ -42,6 +42,8 @@ func New(constr string, log *slog.Logger) (*store, error) {
 
 // Получение комментариев к новости
 func (s *store) Get(newsId int) ([]models.Comment, error) {
+
+	s.log.Debug("получение комментариев по id новости", slog.Int("newsId", newsId))
 	rows, err := s.pool.Query(context.Background(), `
 	SELECT id, author, text, news_id, parent_id, cardinality(path) 
 	FROM comments_structure 
@@ -53,6 +55,8 @@ func (s *store) Get(newsId int) ([]models.Comment, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	s.log.Debug("получение структуры комментариев")
 	var comments []models.Comment
 	for rows.Next() {
 		var comment models.Comment
@@ -74,6 +78,8 @@ func (s *store) Get(newsId int) ([]models.Comment, error) {
 
 // Сохранение нового коментария
 func (s *store) Post(c models.NewComment) (uint64, error) {
+
+	s.log.Debug("сохранение комментария", slog.Any("Comment", c))
 	row := s.pool.QueryRow(context.Background(), `
 	INSERT INTO comments (author, text, news_id, parent_id)
 	VALUES ($1,$2,$3,$4)
@@ -83,12 +89,14 @@ func (s *store) Post(c models.NewComment) (uint64, error) {
 		c.NewsId,
 		c.ParentId,
 	)
+
 	var id uint64
 	err := row.Scan(&id)
 	if err != nil {
 		s.log.Error("Unable to INSERT:", slog.Any("error", err))
 		return 0, err
 	}
+	s.log.Debug("получение id нового комментария", slog.Uint64("id", id))
 	return id, nil
 }
 

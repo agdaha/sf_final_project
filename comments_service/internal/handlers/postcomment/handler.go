@@ -19,8 +19,10 @@ func New(db storage.Store, log *slog.Logger) http.HandlerFunc {
 			slog.String("op", op),
 			slog.String("request_id", middleware.GetReqID(r.Context())),
 		)
+
 		w.Header().Set("Content-Type", "application/json")
-		log.Debug("decode create comment")
+
+		log.Debug("декодирование комментария")
 		var comment models.NewComment
 		defer r.Body.Close()
 		err := json.NewDecoder(r.Body).Decode(&comment)
@@ -30,12 +32,16 @@ func New(db storage.Store, log *slog.Logger) http.HandlerFunc {
 			w.Write([]byte(" ошибка декодирования комментария"))
 			return
 		}
+
+		log.Debug("Валидация полученной структуры")
 		err = validator.New().Struct(comment)
 		if err != nil {
 			log.Error(" No valid data ", slog.Any("error", err))
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
+
+		log.Debug("Сохранение комментария из БД")
 		id, err := db.Post(comment)
 		if err != nil {
 			log.Error(" error insert comment to db ", slog.Any("error", err))
