@@ -26,3 +26,9 @@ prune:
 
 down:
 	docker compose down
+
+testall:
+	go test -v ./api_gateway/... ./censor_service/... ./comments_service/... ./news_service/...
+
+work:
+	go work init ./api_gateway/ ./censor_service/ ./comments_service/ ./news_service/
