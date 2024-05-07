@@ -27,8 +27,10 @@ prune:
 down:
 	docker compose down
 
+.PHONY work testall
+work:
+	go work init ./api_gateway/ ./censor_service/ ./comments_service/ ./news_service/
+
 testall:
 	go test -v ./api_gateway/... ./censor_service/... ./comments_service/... ./news_service/...
 
-work:
-	go work init ./api_gateway/ ./censor_service/ ./comments_service/ ./news_service/
