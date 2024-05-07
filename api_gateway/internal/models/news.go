@@ -41,8 +41,8 @@ func (ni *NullInt64) MarshalJSON() ([]byte, error) {
 	return json.Marshal(ni.Int64)
 }
 
+// Unmarshalling into a pointer will let us detect null
 func (v *NullInt64) UnmarshalJSON(data []byte) error {
-	// Unmarshalling into a pointer will let us detect null
 	var x *int64
 	if err := json.Unmarshal(data, &x); err != nil {
 		return err
