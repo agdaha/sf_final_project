@@ -14,6 +14,7 @@ import (
 	"github.com/agdaha/sf_final_project/api_gateway/internal/models"
 	"github.com/agdaha/sf_final_project/api_gateway/pkg/middleware"
 	"github.com/julienschmidt/httprouter"
+	"github.com/pkg/errors"
 )
 
 func New(newsService newsservice.NewsService, commentService commentservice.CommentService, log *slog.Logger) http.HandlerFunc {
@@ -43,7 +44,7 @@ func New(newsService newsservice.NewsService, commentService commentservice.Comm
 			if err != nil {
 				ch <- models.RoutineNews{
 					News: models.News{},
-					Err:  err,
+					Err:  errors.Wrap(err, "get news"),
 				}
 				return
 			}
@@ -52,7 +53,7 @@ func New(newsService newsservice.NewsService, commentService commentservice.Comm
 			if err != nil {
 				ch <- models.RoutineNews{
 					News: models.News{},
-					Err:  err,
+					Err:  errors.Wrap(err, "decoder news"),
 				}
 				return
 			}
@@ -67,18 +68,18 @@ func New(newsService newsservice.NewsService, commentService commentservice.Comm
 			defer wg.Done()
 			commentsB, err := commentService.GetCommentsForNews(r.Context(), id)
 			if err != nil {
-				ch <- models.RoutineNews{
-					News: models.News{},
-					Err:  err,
+				ch <- models.RoutineComments{
+					Comments: []models.Comment{},
+					Err:      errors.Wrap(err, "get comments for news"),
 				}
 				return
 			}
 			var comments []models.Comment
 			err = json.NewDecoder(bytes.NewBuffer(commentsB)).Decode(&comments)
 			if err != nil {
-				ch <- models.RoutineNews{
-					News: models.News{},
-					Err:  err,
+				ch <- models.RoutineComments{
+					Comments: []models.Comment{},
+					Err:      errors.Wrap(err, "decoder comments"),
 				}
 				return
 			}
@@ -88,7 +89,7 @@ func New(newsService newsservice.NewsService, commentService commentservice.Comm
 			}
 		}(ch, r.Context())
 
-		newsD := models.NewDetailed{}
+		newsD := models.NewsDetailed{}
 
 		wg.Wait()
 		close(ch)
@@ -97,17 +98,17 @@ func New(newsService newsservice.NewsService, commentService commentservice.Comm
 			switch result := result.(type) {
 			case models.RoutineNews:
 				if result.Err != nil {
-					log.Error("Что-то пошло не так", slog.Any("error", err))
+					log.Error("Что-то пошло не так news", slog.Any("error", result.Err))
 					w.WriteHeader(http.StatusInternalServerError)
-					w.Write([]byte("Что-то пошло не так"))
+					w.Write([]byte("Что-то пошло не так news"))
 					return
 				}
 				newsD.News = result.News
 			case models.RoutineComments:
 				if result.Err != nil {
-					log.Error("Что-то пошло не так", slog.Any("error", err))
+					log.Error("Что-то пошло не так com", slog.Any("error", result.Err))
 					w.WriteHeader(http.StatusInternalServerError)
-					w.Write([]byte("Что-то пошло не так"))
+					w.Write([]byte("Что-то пошло не так com"))
 					return
 				}
 				newsD.Comments = result.Comments

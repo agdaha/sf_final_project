@@ -29,6 +29,7 @@ down:
 
 work:
 	go work init ./api_gateway/ ./censor_service/ ./comments_service/ ./news_service/
+	go work sync
 
 testall:
 	go test ./api_gateway/... ./censor_service/... ./comments_service/... ./news_service/...
