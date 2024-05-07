@@ -48,7 +48,7 @@ func New(db storage.Store, log *slog.Logger) http.HandlerFunc {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-
+		log.Debug(" id нового комментария", slog.Uint64("id", id))
 		w.WriteHeader(http.StatusCreated)
 		w.Write([]byte(strconv.Itoa(int(id))))
 	}

@@ -13,7 +13,7 @@ import (
 	"github.com/agdaha/sf_final_project/comments_service/internal/handlers/getcomments"
 	"github.com/agdaha/sf_final_project/comments_service/internal/handlers/postcomment"
 	"github.com/agdaha/sf_final_project/comments_service/internal/storage"
-	"github.com/agdaha/sf_final_project/comments_service/internal/storage/posgres"
+	"github.com/agdaha/sf_final_project/comments_service/internal/storage/postgres"
 	"github.com/agdaha/sf_final_project/comments_service/pkg/logger"
 	"github.com/agdaha/sf_final_project/comments_service/pkg/middleware"
 	"github.com/agdaha/sf_final_project/comments_service/pkg/shutdown"
@@ -35,7 +35,7 @@ func main() {
 
 	log.Info(" подключение к БД")
 	log.Debug("НАСТРОЙКИ БД", slog.Any("conStr", config.DbUrl()))
-	db, err := posgres.New(config.DbUrl(), log)
+	db, err := postgres.New(config.DbUrl(), log)
 	if err != nil {
 		log.Error(" Проблема с подключением к БД: ", slog.Any("error", err))
 		os.Exit(1)

@@ -14,7 +14,7 @@ news-service:
 
 all: api_gateway censor-service comments-service news-service
 
-.PHONY: prune down start_api_gateway rebuild_and_start_api_gateway
+.PHONY: prune down start_api_gateway rebuild_and_start_api_gateway work testall
 start_api_gateway: 
 	docker compose up
 
@@ -27,10 +27,9 @@ prune:
 down:
 	docker compose down
 
-.PHONY work testall
 work:
 	go work init ./api_gateway/ ./censor_service/ ./comments_service/ ./news_service/
 
 testall:
-	go test -v ./api_gateway/... ./censor_service/... ./comments_service/... ./news_service/...
+	go test ./api_gateway/... ./censor_service/... ./comments_service/... ./news_service/...
 
